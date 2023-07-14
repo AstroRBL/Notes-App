@@ -4,7 +4,7 @@ const open = document.querySelector('.open');
 const create = document.querySelector('.note');
 const notesContainer = document.querySelector('.fake-note');
 const textarea = document.querySelector('.note-textarea');
-const noNotesMessage = document.querySelector('.no-notes');
+let editingNote = null;
 
 exitButton.addEventListener('click', () => {
   card.style.display = 'none';
@@ -12,58 +12,58 @@ exitButton.addEventListener('click', () => {
 
 open.addEventListener('click', () => {
   card.style.display = 'block';
-  textarea.value = "";
+  textarea.value = ""; 
 });
 
 create.addEventListener("click", () => {
   const noteText = textarea.value;
   if (noteText.trim() !== '') {
-    let noteContainer = document.createElement("div");
-    let inputBox = document.createElement("button");
-    let img = document.createElement("img");
+    if (editingNote) {
+      editingNote.firstChild.textContent = noteText;
+      editingNote.firstChild.setAttribute('data-full-text', noteText);
+      editingNote = null;
+    } else {
+      let noteContainer = document.createElement("div");
+      let inputBox = document.createElement("button");
+      let img = document.createElement("img");
 
-    inputBox.textContent = noteText;
-    inputBox.className = "fake-button";
-    inputBox.setAttribute('data-full-text', noteText); 
-    inputBox.setAttribute('title', noteText); 
-
-    img.src = "images/garbage-removebg-preview (1).png";
-    img.className = "garbage-img";
-    inputBox.appendChild(img);
-    noteContainer.appendChild(inputBox);
-    notesContainer.appendChild(noteContainer);
-    textarea.value = ""; 
-
-    img.addEventListener("click", () => {
-      event.stopPropagation(); 
-      noteContainer.remove(); 
-      saveNotes();
-      if (notesContainer.children.length === 0) {
-        noNotesMessage.style.display = 'block'; 
+      if (noteText.length > 20) {
+        inputBox.textContent = noteText.slice(0, 20 - 3) + '...';
+      } else {
+        inputBox.textContent = noteText;
       }
-    });
 
-    inputBox.addEventListener("click", () => {
-      card.style.display = 'block'; 
-      textarea.value = inputBox.getAttribute('data-full-text'); 
-    });
+      inputBox.className = "fake-button";
+      inputBox.setAttribute('data-full-text', noteText);
 
+      img.src = "images/garbage-removebg-preview (1).png";
+      img.className = "garbage-img";
+      inputBox.appendChild(img);
+      noteContainer.appendChild(inputBox);
+      notesContainer.appendChild(noteContainer);
+
+      img.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const confirmDelete = window.confirm("Are you sure you want to delete this note?");
+        if (confirmDelete) {
+          noteContainer.remove();
+          saveNotes();
+        }
+      });
+
+      inputBox.addEventListener("click", () => {
+        card.style.display = 'block';
+        textarea.value = inputBox.getAttribute('data-full-text');
+        editingNote = noteContainer;
+      });
+    }
+
+    textarea.value = "";
     card.style.display = 'none';
-
     saveNotes();
-
-    noNotesMessage.style.display = 'none';
-  }
-
-  if (notesContainer.children.length === 0) {
-    noNotesMessage.style.display = 'block'; 
+    location.reload();
   }
 });
-
-textarea.addEventListener('input', () => {
-  saveNotes(); 
-});
-
 
 function saveNotes() {
   const noteContainers = Array.from(notesContainer.children);
@@ -73,7 +73,6 @@ function saveNotes() {
   });
   localStorage.setItem('notes', JSON.stringify(notes));
 }
-
 
 function loadNotes() {
   const savedNotes = localStorage.getItem('notes');
@@ -87,7 +86,6 @@ function loadNotes() {
       inputBox.textContent = truncateText(note.fullText);
       inputBox.className = "fake-button";
       inputBox.setAttribute('data-full-text', note.fullText);
-      inputBox.setAttribute('title', note.fullText); 
 
       img.src = "images/garbage-removebg-preview (1).png";
       img.className = "garbage-img";
@@ -95,37 +93,33 @@ function loadNotes() {
       noteContainer.appendChild(inputBox);
       notesContainer.appendChild(noteContainer);
 
-      img.addEventListener("click", () => {
-        noteContainer.remove(); 
-        saveNotes(); 
-        if (notesContainer.children.length === 0) {
-          noNotesMessage.style.display = 'block'; 
+      img.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const confirmDelete = window.confirm("Are you sure you want to delete this note?");
+        if (confirmDelete) {
+          noteContainer.remove();
+          saveNotes();
         }
       });
 
       inputBox.addEventListener("click", () => {
-        card.style.display = 'block'; 
-        textarea.value = inputBox.getAttribute('data-full-text'); 
+        card.style.display = 'block';
+        textarea.value = inputBox.getAttribute('data-full-text');
+        editingNote = noteContainer;
       });
     }
   }
-
-  if (notesContainer.children.length === 0) {
-    noNotesMessage.style.display = 'block'; 
-  } else {
-    noNotesMessage.style.display = 'none'; 
-  }
 }
 
-
 function truncateText(text) {
-  if (text.length > 10) {
-    return text.slice(0, 10) + '...'; 
+  const maxLength = 20;
+  if (text.length > maxLength) {
+    return text.slice(0, maxLength - 3) + '...';
   }
   return text;
 }
 
 window.addEventListener('load', () => {
   loadNotes();
-  card.style.display = 'none'; 
+  card.style.display = 'none';
 });
