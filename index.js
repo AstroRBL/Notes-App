@@ -4,6 +4,7 @@ const open = document.querySelector('.open');
 const create = document.querySelector('.note');
 const notesContainer = document.querySelector('.fake-note');
 const textarea = document.querySelector('.note-textarea');
+const noNotesMessage = document.querySelector('.no-notes');
 let editingNote = null;
 
 exitButton.addEventListener('click', () => {
@@ -48,6 +49,7 @@ create.addEventListener("click", () => {
         if (confirmDelete) {
           noteContainer.remove();
           saveNotes();
+          checkNoteAvailability();
         }
       });
 
@@ -72,6 +74,7 @@ function saveNotes() {
     return { truncatedText: truncateText(noteText), fullText: noteText };
   });
   localStorage.setItem('notes', JSON.stringify(notes));
+  checkNoteAvailability();
 }
 
 function loadNotes() {
@@ -97,6 +100,7 @@ function loadNotes() {
         event.stopPropagation();
         const confirmDelete = window.confirm("Are you sure you want to delete this note?");
         if (confirmDelete) {
+          document.title = "Note Deletion Confirmation"; // Change the pop-up window title
           noteContainer.remove();
           saveNotes();
         }
@@ -109,6 +113,7 @@ function loadNotes() {
       });
     }
   }
+  checkNoteAvailability();
 }
 
 function truncateText(text) {
@@ -117,6 +122,15 @@ function truncateText(text) {
     return text.slice(0, maxLength - 3) + '...';
   }
   return text;
+}
+
+function checkNoteAvailability() {
+  const noteContainers = Array.from(notesContainer.children);
+  if (noteContainers.length > 0) {
+    noNotesMessage.style.display = 'none';
+  } else {
+    noNotesMessage.style.display = 'block';
+  }
 }
 
 window.addEventListener('load', () => {
